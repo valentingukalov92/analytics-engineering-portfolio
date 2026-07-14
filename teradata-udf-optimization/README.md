@@ -1,17 +1,20 @@
 # Teradata UDF Optimization: SUBSTR → STRTOK
 
 ## Context
-A widely-used UDF extracted Unix timestamps from delimited strings. It was called
+A widely-used UDF extracted Unix timestamps from delimited strings. It is called
 in 30+ daily pipelines, processing 100k-10M+ rows per run. Profiling showed CPU time was the bottleneck.
 
 ## Problem
-The original implementation used 7 deeply nested `SUBSTR` calls (each operating
-on the result of the previous one) to locate delimiter positions and extract
-the target segment.
+The original implementation called `decode_SOfferId()` 7 times within nested
+`SUBSTR` and `INSTR` expressions to locate and extract the third token from
+the decoded string. Teradata does not cache UDF results, so each invocation
+triggered a redundant base64-decode — wasting CPU on every row.
 
 ## Solution
-Replaced multiple `SUBSTR` calls with a single `STRTOK`, which tokenizes the
-string natively in one pass.
+Replaced the nested `SUBSTR`/`INSTR` calls with a single `STRTOK`, which
+tokenizes the string natively and extracts the required token directly.
+`decode_SOfferId` is now called once per row instead of 7 times. Also added
+explicit NULL handling for input robustness.
 
 ## Benchmark Results
 | Metric | Original | Optimized | Improvement |
@@ -23,8 +26,8 @@ string natively in one pass.
 *Tested on a 30M-row sample dataset. Results consistent across 5+ runs.*
 
 ## Files
-- `original_udf.sql` — UDF before optimization
-- `optimized_udf.sql` — UDF after optimization
+- `udf_before.sql` — UDF before optimization (7 nested SUBSTR calls)
+- `udf_after.sql` — UDF after optimization (single STRTOK)
 - `benchmark.sql` — test harness for reproducible comparison
 - `generate_test_data.py` — test data generator for reproducible benchmarks
 
