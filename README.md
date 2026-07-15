@@ -12,6 +12,12 @@ Benchmarked and reproducible with generated test data.
 
 *Stack: Teradata SQL, Python, benchmarking*
 
+### [Excel VBA Zero Row Removal](./excel-vba-deleting-zero-rows/)
+Automated manual cleanup of 130+ worksheet order files, saving ~15 hours/week
+across a team of 30 purchasing managers.
+
+*Stack: Excel VBA, process automation*
+
 ---
 
 *More case studies coming soon — including dbt modeling and fraud
